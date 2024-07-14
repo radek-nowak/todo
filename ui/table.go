@@ -20,24 +20,55 @@ const (
 	bottomMiddle = "╩"
 )
 
+const (
+	idLength   = 3
+	taskLength = 55
+	doneLength = 5
+)
+
 func Display(tl todo.TodoList) {
 	todos := tl.GetTodos()
-	idLength, taskLength := 3, 55
 
-	// Header
-	headerTop := fmt.Sprintf(
+	// Display the header
+	fmt.Println(formatHeaderTop())
+	fmt.Println(formatHeaderMiddle())
+	fmt.Println(formatHeaderBottom())
+
+	// Display the rows
+	for i, todo := range todos {
+		taskLines := wrapText(todo.Task, taskLength)
+		for j, line := range taskLines {
+			if j == 0 {
+				fmt.Printf("%s %-*d %s %-*s %s %-*t %s\n", vertical, idLength, todo.ID, vertical, taskLength, line, vertical, doneLength, todo.Done, vertical)
+			} else {
+				fmt.Printf("%s %-*s %s %-*s %s %-*s %s\n", vertical, idLength, "", vertical, taskLength, line, vertical, doneLength, "", vertical)
+			}
+		}
+		if i < len(todos)-1 {
+			fmt.Println(formatRowSeparator())
+		}
+	}
+
+	// Display the footer
+	fmt.Println(formatFooter())
+}
+
+func formatHeaderTop() string {
+	return fmt.Sprintf(
 		"%s%s%s%s%s%s%s",
 		topLeft,
 		strings.Repeat(horizontal, idLength+2),
 		topMiddle,
 		strings.Repeat(horizontal, taskLength+2),
 		topMiddle,
-		strings.Repeat(horizontal, 7),
+		strings.Repeat(horizontal, doneLength+2),
 		topRight,
 	)
+}
 
-	headerMiddle := fmt.Sprintf(
-		"%s %-*s %s %-*s %s %-5s %s",
+func formatHeaderMiddle() string {
+	return fmt.Sprintf(
+		"%s %-*s %s %-*s %s %-*s %s",
 		vertical,
 		idLength,
 		"ID",
@@ -45,64 +76,49 @@ func Display(tl todo.TodoList) {
 		taskLength,
 		"Task",
 		vertical,
+		doneLength,
 		"Done",
 		vertical,
 	)
+}
 
-	headerBottom := fmt.Sprintf(
+func formatHeaderBottom() string {
+	return fmt.Sprintf(
 		"%s%s%s%s%s%s%s",
 		middleLeft,
 		strings.Repeat(horizontal, idLength+2),
 		middle,
 		strings.Repeat(horizontal, taskLength+2),
 		middle,
-		strings.Repeat(horizontal, 7),
+		strings.Repeat(horizontal, doneLength+2),
 		middleRight,
 	)
+}
 
-	fmt.Println(headerTop)
-	fmt.Println(headerMiddle)
-	fmt.Println(headerBottom)
-
-	// Rows
-	rowSeparator := fmt.Sprintf(
+func formatRowSeparator() string {
+	return fmt.Sprintf(
 		"%s%s%s%s%s%s%s",
 		middleLeft,
 		strings.Repeat(horizontal, idLength+2),
 		middle,
 		strings.Repeat(horizontal, taskLength+2),
 		middle,
-		strings.Repeat(horizontal, 7),
+		strings.Repeat(horizontal, doneLength+2),
 		middleRight,
 	)
+}
 
-	// Footer
-	footer := fmt.Sprintf(
+func formatFooter() string {
+	return fmt.Sprintf(
 		"%s%s%s%s%s%s%s",
 		bottomLeft,
 		strings.Repeat(horizontal, idLength+2),
 		bottomMiddle,
 		strings.Repeat(horizontal, taskLength+2),
 		bottomMiddle,
-		strings.Repeat(horizontal, 7),
+		strings.Repeat(horizontal, doneLength+2),
 		bottomRight,
 	)
-
-	for i, todo := range todos {
-		taskLines := wrapText(todo.Task, taskLength)
-		for j, line := range taskLines {
-			if j == 0 {
-				fmt.Printf("%s %-*d %s %-*s %s %-5t %s\n", vertical, idLength, todo.ID, vertical, taskLength, line, vertical, todo.Done, vertical)
-			} else {
-				fmt.Printf("%s %-*s %s %-*s %s %-5s %s\n", vertical, idLength, "", vertical, taskLength, line, vertical, "", vertical)
-			}
-		}
-		if i < len(todos)-1 {
-			fmt.Println(rowSeparator)
-		}
-	}
-
-	fmt.Println(footer)
 }
 
 func wrapText(text string, length int) []string {
@@ -119,4 +135,3 @@ func wrapText(text string, length int) []string {
 
 	return wrapped
 }
-
