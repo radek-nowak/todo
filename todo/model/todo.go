@@ -1,5 +1,7 @@
 package todo
 
+import "fmt"
+
 type Todo struct {
 	ID   int    `json:"id,omitempty"`
 	Task string `json:"task,omitempty"`
@@ -55,6 +57,11 @@ func (tl *TodoList) Add(task string) {
 func (tl *TodoList) CompleteTask(id int) {
 	if id < 1 || id >= tl.nextID {
 		panic("id out of range")
+	}
+
+	if tl.todos[id-1].Done == true {
+		fmt.Println("Already completed")
+		return
 	}
 
 	tl.todos[id-1].Done = true
