@@ -2,7 +2,6 @@ package main
 
 import (
 	todo "go_todo/todo/model"
-	"go_todo/ui"
 )
 
 func main() {
@@ -12,5 +11,5 @@ func main() {
 	todoList.Add("asdnladlasjldkjalskjdlkjasldkjlaskjdlkjasldkjajsldkjlajsdlkj")
 	todoList.Add("first task")
 	todoList.CompleteTask(2)
-	ui.Display(*todoList)
+	// ui.Display(*todoList)
 }
