@@ -22,7 +22,7 @@ const (
 
 func Display(tl todo.TodoList) {
 	todos := tl.GetTodos()
-	idLength, taskLength := getMaxLengths(todos)
+	idLength, taskLength := 3, 55
 
 	// Header
 	headerTop := fmt.Sprintf(
@@ -89,8 +89,15 @@ func Display(tl todo.TodoList) {
 	)
 
 	for i, todo := range todos {
-		fmt.Printf("%s %-*d %s %-*s %s %-5t %s\n", vertical, idLength, todo.ID, vertical, taskLength, todo.Task, vertical, todo.Done, vertical)
-		if i < len(todos)-1 { // do not add separator for the las task
+		taskLines := wrapText(todo.Task, taskLength)
+		for j, line := range taskLines {
+			if j == 0 {
+				fmt.Printf("%s %-*d %s %-*s %s %-5t %s\n", vertical, idLength, todo.ID, vertical, taskLength, line, vertical, todo.Done, vertical)
+			} else {
+				fmt.Printf("%s %-*s %s %-*s %s %-5s %s\n", vertical, idLength, "", vertical, taskLength, line, vertical, "", vertical)
+			}
+		}
+		if i < len(todos)-1 {
 			fmt.Println(rowSeparator)
 		}
 	}
@@ -98,23 +105,18 @@ func Display(tl todo.TodoList) {
 	fmt.Println(footer)
 }
 
-func getMaxLengths(todos []todo.Todo) (int, int) {
-	maxIdHeaderLen := 2
-	maxTaskHeaderLen := 10
-
-	for _, todo := range todos {
-		idLen := len(string(todo.ID))
-		taskLen := len(todo.Task)
-
-		if idLen > maxIdHeaderLen {
-			maxIdHeaderLen = idLen
-		}
-
-		if taskLen > maxTaskHeaderLen {
-			maxTaskHeaderLen = taskLen
-		}
-
+func wrapText(text string, length int) []string {
+	if len(text) <= length {
+		return []string{text}
 	}
 
-	return maxIdHeaderLen, maxTaskHeaderLen
+	var wrapped []string
+	for len(text) > length {
+		wrapped = append(wrapped, text[:length])
+		text = text[length:]
+	}
+	wrapped = append(wrapped, text)
+
+	return wrapped
 }
+
