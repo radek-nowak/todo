@@ -11,6 +11,24 @@ type TodoList struct {
 	nextID int
 }
 
+func (TodoList) Schema() []string {
+	return []string{"ID", "TASK", "DONE"}
+}
+
+func (tl TodoList) Data() [][]interface{} {
+	var data [][]interface{}
+
+	for _, todo := range tl.todos {
+		data = append(data, []interface{}{todo.ID, todo.Task, todo.Done})
+	}
+
+	return data
+}
+
+func (TodoList) ColumnWidths() []int {
+	return []int{3, 55, 5}
+}
+
 func NewTodoList() *TodoList {
 	return &TodoList{nextID: 1}
 }
@@ -41,8 +59,3 @@ func (tl *TodoList) CompleteTask(id int) {
 
 	tl.todos[id-1].Done = true
 }
-
-// func (tl *TodoList) AsBytes()  {
-// 	return []byte(tl.todos)
-// 	
-// }
