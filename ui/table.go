@@ -5,14 +5,13 @@ import (
 	"strings"
 )
 
-// Define Displayable interface
 type Displayable interface {
 	Schema() []string
 	Data() [][]interface{}
 	ColumnWidths() []int
 }
 
-// Define table borders
+// Table borders
 const (
 	topLeft      = "╔"
 	topRight     = "╗"
@@ -27,16 +26,18 @@ const (
 	bottomMiddle = "╩"
 )
 
-// Display function for Displayable interface
 func Display(d Displayable) {
 	schema := d.Schema()
 	data := d.Data()
 	colWidths := d.ColumnWidths()
 
 	// Display the header
-	fmt.Println(formatHeaderTop(colWidths))
-	fmt.Println(formatHeaderMiddle(schema, colWidths))
-	fmt.Println(formatHeaderBottom(colWidths))
+	headerTop := formatElement(colWidths, topLeft, topMiddle, topRight)
+	headrBottom := formatElement(colWidths, middleLeft, middle, middleRight)
+	headerMiddle := formatHeaderMiddle(schema, colWidths)
+	fmt.Println(headerTop)
+	fmt.Println(headerMiddle)
+	fmt.Println(headrBottom)
 
 	// Display the rows
 	for i, row := range data {
@@ -60,20 +61,21 @@ func Display(d Displayable) {
 	}
 
 	// Display the footer
-	fmt.Println(formatFooter(colWidths))
+	footer:=formatElement(colWidths, bottomLeft, bottomMiddle, bottomRight)
+	fmt.Println(footer)
 }
 
-func formatHeaderTop(colWidths []int) string {
-	var headerTop strings.Builder
-	headerTop.WriteString(topLeft)
+func formatElement(colWidths []int, left string, middle string, right string) string {
+	var uiElement strings.Builder
+	uiElement.WriteString(left)
 	for i, width := range colWidths {
 		if i > 0 {
-			headerTop.WriteString(topMiddle)
+			uiElement.WriteString(middle)
 		}
-		headerTop.WriteString(strings.Repeat(horizontal, width+2))
+		uiElement.WriteString(strings.Repeat(horizontal, width+2))
 	}
-	headerTop.WriteString(topRight)
-	return headerTop.String()
+	uiElement.WriteString(right)
+	return uiElement.String()
 }
 
 func formatHeaderMiddle(schema []string, colWidths []int) string {
@@ -83,19 +85,6 @@ func formatHeaderMiddle(schema []string, colWidths []int) string {
 		headerMiddle.WriteString(fmt.Sprintf(" %-*s %s", colWidths[i], col, vertical))
 	}
 	return headerMiddle.String()
-}
-
-func formatHeaderBottom(colWidths []int) string {
-	var headerBottom strings.Builder
-	headerBottom.WriteString(middleLeft)
-	for i, width := range colWidths {
-		if i > 0 {
-			headerBottom.WriteString(middle)
-		}
-		headerBottom.WriteString(strings.Repeat(horizontal, width+2))
-	}
-	headerBottom.WriteString(middleRight)
-	return headerBottom.String()
 }
 
 func formatRowSeparator(colWidths []int) string {
@@ -166,5 +155,3 @@ func wrapText(text string, length int) []string {
 
 	return wrapped
 }
-
-
