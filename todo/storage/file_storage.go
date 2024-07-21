@@ -20,7 +20,7 @@ func ReadData(path string) (*todo.Tasks, error) {
 	return todo.FromTodos(todos), nil
 }
 
-func WriteData(path string, todoList *todo.Tasks) error {
+func writeData(path string, todoList *todo.Tasks) error {
 	bytes, err := json.Marshal(todoList.GetTodos())
 	err = os.WriteFile(path, bytes, 0644)
 
@@ -42,7 +42,7 @@ func PersistChanges(path string, operation func(todo.Tasks) (*todo.Tasks, error)
 		return err
 	}
 
-	err = WriteData(path, tasks)
+	err = writeData(path, tasks)
 	if err != nil {
 		return err
 	}
