@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	todo "go_todo/todo/model"
 	"go_todo/todo/storage"
 	"strconv"
@@ -15,14 +16,20 @@ var completeTaskCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := "./tasks.json"
-		storage.PersistChanges(path, func(tl todo.Tasks) (*todo.Tasks, error) {
+		err := storage.PersistChanges(path, func(t todo.Tasks) (*todo.Tasks, error) {
 			arg, err := strconv.Atoi(args[0])
 			if err != nil {
-				panic("Failed to parse argument as an integer" + err.Error())
+				return nil, err
 			}
-			tl.CompleteTask(arg)
-			return &tl, nil
+			err = t.CompleteTask(arg)
+			if err != nil {
+				return nil, fmt.Errorf("Unable to complete the task, %q", err)
+			}
+			return &t, nil
 		})
+		if err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 

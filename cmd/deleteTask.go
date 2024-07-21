@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	todo "go_todo/todo/model"
 	"go_todo/todo/storage"
 	"strconv"
@@ -19,10 +20,16 @@ var deleteTaskCmd = &cobra.Command{
 		if err != nil {
 			panic("Failed to parse argument as an integer" + err.Error())
 		}
-		storage.PersistChanges(path, func(tl todo.Tasks) (*todo.Tasks, error) {
-			tl.Delete(taskId)
+		err = storage.PersistChanges(path, func(tl todo.Tasks) (*todo.Tasks, error) {
+			err := tl.Delete(taskId)
+			if err != nil {
+				return nil, fmt.Errorf("Unable to delete the task %q", err)
+			}
 			return &tl, nil
 		})
+		if err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 
