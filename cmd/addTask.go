@@ -14,18 +14,10 @@ var addTask = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := "./tasks.json"
-		data, err := storage.ReadData(path)
-		if err != nil {
-			panic("Error in write data cmd during reading" + err.Error())
-		}
-
-		todos := todo.FromTodos(data.GetTodos())
-		todos.Add(args[0])
-
-		err = storage.WriteData(path, todos)
-		if err != nil {
-			panic("Error in write data cmd during writing" + err.Error())
-		}
+		storage.PersistChanges(path, func(t todo.Tasks) (*todo.Tasks, error) {
+			t.Add(args[0])
+			return &t, nil
+		})
 	},
 }
 
