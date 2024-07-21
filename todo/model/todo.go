@@ -8,13 +8,12 @@ var ErrInvalidTaskId = errors.New("Invaid task id")
 var ErrTaskAlreadyCompleted = errors.New("Already completed")
 
 type Todo struct {
-	// ID   int    `json:"id,omitempty"`
 	Task string `json:"task,omitempty"`
 	Done bool   `json:"done,omitempty"`
 }
 
 type Tasks struct {
-	todos  []Todo
+	todos []Todo
 }
 
 func (Tasks) Schema() []string {
@@ -25,7 +24,7 @@ func (t Tasks) Data() [][]interface{} {
 	var data [][]interface{}
 
 	for i, todo := range t.todos {
-		data = append(data, []interface{}{i+1, todo.Task, todo.Done})
+		data = append(data, []interface{}{i + 1, todo.Task, todo.Done})
 	}
 
 	return data
@@ -57,17 +56,16 @@ func (t *Tasks) Add(task string) {
 }
 
 func (t *Tasks) Delete(id int) error {
-	if id < 1 || id > len(t.todos) {
+	if err := t.taskIdIsWithinBounds(id); err != nil {
 		return ErrInvalidTaskId
 	}
 
-	// todo add get metod that checks if task exists, and returns error if not
 	t.todos = append(t.todos[:id-1], t.todos[id:]...)
 	return nil
 }
 
 func (t *Tasks) CompleteTask(id int) error {
-	if id < 1 || id > len(t.todos) {
+	if err := t.taskIdIsWithinBounds(id); err != nil {
 		return ErrInvalidTaskId
 	}
 
@@ -80,10 +78,17 @@ func (t *Tasks) CompleteTask(id int) error {
 }
 
 func (t *Tasks) UpdateTask(id int, task string) error {
-	if id < 1 || id > len(t.todos) {
+	if err := t.taskIdIsWithinBounds(id); err != nil {
 		return ErrInvalidTaskId
 	}
 
 	t.todos[id-1].Task = task
+	return nil
+}
+
+func (t *Tasks) taskIdIsWithinBounds(id int) error {
+	if id < 1 || id > len(t.todos) {
+		return ErrInvalidTaskId
+	}
 	return nil
 }
