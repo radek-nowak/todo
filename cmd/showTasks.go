@@ -1,4 +1,4 @@
-package todo
+package cmd
 
 import (
 	"go_todo/todo/storage"

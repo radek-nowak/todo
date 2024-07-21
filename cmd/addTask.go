@@ -1,4 +1,4 @@
-package todo
+package cmd
 
 import (
 	todo "go_todo/todo/model"
