@@ -83,7 +83,7 @@ func TestWriteData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := WriteData(tt.args, tt.want); (err != nil) != tt.wantErr {
+			if err := writeData(tt.args, tt.want); (err != nil) != tt.wantErr {
 				t.Errorf("WriteData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
