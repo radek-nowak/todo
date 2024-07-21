@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func ReadData(path string) (*todo.TodoList, error) {
+func ReadData(path string) (*todo.Tasks, error) {
 	data, err := os.ReadFile(path)
 
 	if err != nil {
@@ -20,7 +20,7 @@ func ReadData(path string) (*todo.TodoList, error) {
 	return todo.FromTodos(todos), nil
 }
 
-func WriteData(path string, todoList *todo.TodoList) error {
+func WriteData(path string, todoList *todo.Tasks) error {
 	bytes, err := json.Marshal(todoList.GetTodos())
 	err = os.WriteFile(path, bytes, 0644)
 
@@ -31,8 +31,7 @@ func WriteData(path string, todoList *todo.TodoList) error {
 	return nil
 }
 
-func PersistChanges(path string, operation func(todo.TodoList) (*todo.TodoList, error)) error {
-
+func PersistChanges(path string, operation func(todo.Tasks) (*todo.Tasks, error)) error {
 	tasks, err := ReadData(path)
 	if err != nil {
 		return err

@@ -1,68 +1,89 @@
 package todo
 
-import "fmt"
+import (
+	"errors"
+)
+
+var ErrInvalidTaskId = errors.New("Invaid task id")
+var ErrTaskAlreadyCompleted = errors.New("Already completed")
 
 type Todo struct {
-	ID   int    `json:"id,omitempty"`
+	// ID   int    `json:"id,omitempty"`
 	Task string `json:"task,omitempty"`
 	Done bool   `json:"done,omitempty"`
 }
 
-type TodoList struct {
+type Tasks struct {
 	todos  []Todo
-	nextID int
 }
 
-func (TodoList) Schema() []string {
+func (Tasks) Schema() []string {
 	return []string{"ID", "TASK", "DONE"}
 }
 
-func (tl TodoList) Data() [][]interface{} {
+func (t Tasks) Data() [][]interface{} {
 	var data [][]interface{}
 
-	for _, todo := range tl.todos {
-		data = append(data, []interface{}{todo.ID, todo.Task, todo.Done})
+	for i, todo := range t.todos {
+		data = append(data, []interface{}{i+1, todo.Task, todo.Done})
 	}
 
 	return data
 }
 
-func (TodoList) ColumnWidths() []int {
+func (Tasks) ColumnWidths() []int {
 	return []int{3, 55, 5}
 }
 
-func NewTodoList() *TodoList {
-	return &TodoList{nextID: 1}
+func NewTodoList() *Tasks {
+	return &Tasks{}
 }
 
-func FromTodos(todos []Todo) *TodoList {
-	return &TodoList{todos: todos, nextID: len(todos) + 1}
+func FromTodos(todos []Todo) *Tasks {
+	return &Tasks{todos: todos}
 }
 
-func (tl *TodoList) GetTodos() []Todo {
-	return tl.todos
+func (t *Tasks) GetTodos() []Todo {
+	return t.todos
 }
 
-func (tl *TodoList) Add(task string) {
+func (t *Tasks) Add(task string) {
 	newTodo := Todo{
-		ID:   tl.nextID,
 		Task: task,
 		Done: false,
 	}
 
-	tl.todos = append(tl.todos, newTodo)
-	tl.nextID++
+	t.todos = append(t.todos, newTodo)
 }
 
-func (tl *TodoList) CompleteTask(id int) {
-	if id < 1 || id >= tl.nextID {
-		panic("id out of range")
+func (t *Tasks) Delete(id int) error {
+	if id < 1 || id > len(t.todos) {
+		return ErrInvalidTaskId
 	}
 
-	if tl.todos[id-1].Done == true {
-		fmt.Println("Already completed")
-		return
+	// todo add get metod that checks if task exists, and returns error if not
+	t.todos = append(t.todos[:id-1], t.todos[id:]...)
+	return nil
+}
+
+func (t *Tasks) CompleteTask(id int) error {
+	if id < 1 || id > len(t.todos) {
+		return ErrInvalidTaskId
 	}
 
-	tl.todos[id-1].Done = true
+	if t.todos[id-1].Done == true {
+		return ErrTaskAlreadyCompleted
+	}
+
+	t.todos[id-1].Done = true
+	return nil
+}
+
+func (t *Tasks) UpdateTask(id int, task string) error {
+	if id < 1 || id > len(t.todos) {
+		return ErrInvalidTaskId
+	}
+
+	t.todos[id-1].Task = task
+	return nil
 }
