@@ -22,6 +22,8 @@ jobs:
         go-version: '>=1.22'
 
     - name: Build
+      with:
+        go-version: '>=1.22'
       run: go build -v ./...
 
     - name: Test
