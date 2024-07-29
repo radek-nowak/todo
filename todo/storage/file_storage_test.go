@@ -27,15 +27,15 @@ func TestReadData(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    string
-		want    *todo.TodoList
+		want    *todo.Tasks
 		wantErr bool
 	}{
 		{
 			name: "Valid JSON",
 			args: validJsonPath,
 			want: todo.FromTodos([]todo.Todo{
-				{ID: 1, Task: "Task 1", Done: false},
-				{ID: 2, Task: "Task 2", Done: true},
+				{Task: "Task 1", Done: false},
+				{Task: "Task 2", Done: true},
 			}),
 			wantErr: false,
 		},
@@ -63,12 +63,12 @@ func TestWriteData(t *testing.T) {
 
 	type args struct {
 		path     string
-		todoList *todo.TodoList
+		todoList *todo.Tasks
 	}
 	tests := []struct {
 		name    string
 		args    string
-		want    *todo.TodoList
+		want    *todo.Tasks
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -76,14 +76,14 @@ func TestWriteData(t *testing.T) {
 			name: "Valid JSON",
 			args: validJsonPath,
 			want: todo.FromTodos([]todo.Todo{
-				{ID: 1, Task: "Task 1", Done: false},
+				{Task: "Task 1", Done: false},
 			}),
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := WriteData(tt.args, tt.want); (err != nil) != tt.wantErr {
+			if err := writeData(tt.args, tt.want); (err != nil) != tt.wantErr {
 				t.Errorf("WriteData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

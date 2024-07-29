@@ -1,4 +1,4 @@
-package reverser 
+package cmd
 
 import (
 	"fmt"
@@ -8,17 +8,14 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "test",
-	Args: cobra.ExactArgs(1),
-	Short: "short test",
-	Long: "Long test",
+	Use: "todo",
+	Short: "todo cli",
 	Run: func(cmd *cobra.Command, args []string) {},
 }
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "Oops %s", err)
+		fmt.Fprintf(os.Stderr, "An error occured when executing root command %s", err)
 		os.Exit(1)
 	}
-
 }
