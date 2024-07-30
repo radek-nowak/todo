@@ -13,8 +13,7 @@ var addTask = &cobra.Command{
 	Aliases: []string{"a"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		path := "./tasks.json"
-		storage.PersistChanges(path, func(t todo.Tasks) (*todo.Tasks, error) {
+		storage.PersistChanges(func(t todo.Tasks) (*todo.Tasks, error) {
 			t.Add(args[0])
 			return &t, nil
 		})

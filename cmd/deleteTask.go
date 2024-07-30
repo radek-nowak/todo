@@ -15,12 +15,11 @@ var deleteTaskCmd = &cobra.Command{
 	Short:   "deletes a task",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		path := "./tasks.json"
 		taskId, err := strconv.Atoi(args[0])
 		if err != nil {
 			panic("Failed to parse argument as an integer" + err.Error())
 		}
-		err = storage.PersistChanges(path, func(tl todo.Tasks) (*todo.Tasks, error) {
+		err = storage.PersistChanges(func(tl todo.Tasks) (*todo.Tasks, error) {
 			err := tl.Delete(taskId)
 			if err != nil {
 				return nil, fmt.Errorf("Unable to delete the task %v", err)

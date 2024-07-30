@@ -15,8 +15,7 @@ var updateTaskCmd = &cobra.Command{
 	Short:   "update task",
 	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		path := "./tasks.json"
-		err := storage.PersistChanges(path, func(t todo.Tasks) (*todo.Tasks, error) {
+		err := storage.PersistChanges(func(t todo.Tasks) (*todo.Tasks, error) {
 			taskId, err := strconv.Atoi(args[0])
 			if err != nil {
 				return nil, err

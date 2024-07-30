@@ -12,7 +12,7 @@ var showTaskCmd = &cobra.Command {
 	Short: "shows tasks",
 	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		tasks, err := storage.ReadData("./tasks.json")
+		tasks, err := storage.ReadData()
 		if err != nil {
 			panic("Error occured in show task command")
 		}
