@@ -2,7 +2,6 @@ package storage
 
 import (
 	"encoding/json"
-	"fmt"
 	todo "go_todo/todo/model"
 	"os"
 	"reflect"
@@ -16,10 +15,10 @@ func TestReadData(t *testing.T) {
         {"ID": 2, "Task": "Task 2", "Done": true}
 	]`
 
-	validJsonPath := "data.json"
+	dataStorageFilePath = "data.json"
 
-	os.WriteFile(validJsonPath, []byte(validJson), 0644)
-	defer os.Remove(validJsonPath)
+	os.WriteFile(dataStorageFilePath, []byte(validJson), 0644)
+	defer os.Remove(dataStorageFilePath)
 
 	type args struct {
 		path string
@@ -32,7 +31,7 @@ func TestReadData(t *testing.T) {
 	}{
 		{
 			name: "Valid JSON",
-			args: validJsonPath,
+			args: dataStorageFilePath,
 			want: todo.FromTodos([]todo.Todo{
 				{Task: "Task 1", Done: false},
 				{Task: "Task 2", Done: true},
@@ -47,6 +46,8 @@ func TestReadData(t *testing.T) {
 				t.Errorf("ReadData() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			os.Remove(dataStorageFilePath)
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ReadData() = %v, want %v", got, tt.want)
 			}
@@ -56,10 +57,10 @@ func TestReadData(t *testing.T) {
 
 func TestWriteData(t *testing.T) {
 
-	validJsonPath := "data.json"
+	dataStorageFilePath = "test_data.json"
 
-	os.WriteFile(validJsonPath, []byte(""), 0644)
-	defer os.Remove(validJsonPath)
+	os.WriteFile(dataStorageFilePath, []byte(""), 0644)
+	defer os.Remove(dataStorageFilePath)
 
 	type args struct {
 		path     string
@@ -71,10 +72,9 @@ func TestWriteData(t *testing.T) {
 		want    *todo.Tasks
 		wantErr bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "Valid JSON",
-			args: validJsonPath,
+			args: dataStorageFilePath,
 			want: todo.FromTodos([]todo.Todo{
 				{Task: "Task 1", Done: false},
 			}),
@@ -87,8 +87,7 @@ func TestWriteData(t *testing.T) {
 				t.Errorf("WriteData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			got, _ := os.ReadFile(validJsonPath)
-			fmt.Println(got)
+			got, _ := os.ReadFile(dataStorageFilePath)
 			var actualTodos []todo.Todo
 			json.Unmarshal(got, &actualTodos)
 			actualTodoList := todo.FromTodos(actualTodos)
