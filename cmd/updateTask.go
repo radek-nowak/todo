@@ -22,7 +22,7 @@ var updateTaskCmd = &cobra.Command{
 			}
 			err = t.UpdateTask(taskId, args[1])
 			if err != nil {
-				return nil, fmt.Errorf("Unable to update the task, %v", err)
+				return nil, fmt.Errorf("unable to update the task, %v", err)
 			}
 			return &t, nil
 		})

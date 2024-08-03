@@ -36,7 +36,6 @@ func Init() {
 
 func ReadData() (*model.Tasks, error) {
 	data, err := os.ReadFile(dataStorageFilePath)
-
 	if err != nil {
 		return nil, err
 	}

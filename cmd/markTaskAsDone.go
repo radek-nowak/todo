@@ -22,10 +22,11 @@ var completeTaskCmd = &cobra.Command{
 			}
 			err = t.CompleteTask(arg)
 			if err != nil {
-				return nil, fmt.Errorf("Unable to complete the task, %v", err)
+				return nil, fmt.Errorf("unable to complete the task, %v", err)
 			}
 			return &t, nil
 		})
+
 		if err != nil {
 			fmt.Println(err)
 		}

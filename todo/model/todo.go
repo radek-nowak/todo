@@ -4,8 +4,8 @@ import (
 	"errors"
 )
 
-var ErrInvalidTaskId = errors.New("Invaid task id")
-var ErrTaskAlreadyCompleted = errors.New("Already completed")
+var ErrInvalidTaskId = errors.New("invaid task id")
+var ErrTaskAlreadyCompleted = errors.New("already completed")
 
 type Todo struct {
 	Task string `json:"task,omitempty"`
@@ -20,11 +20,11 @@ func (Tasks) Schema() []string {
 	return []string{"ID", "TASK", "DONE"}
 }
 
-func (t Tasks) Data() [][]interface{} {
-	var data [][]interface{}
+func (t Tasks) Data() [][]any {
+	var data [][]any
 
 	for i, todo := range t.todos {
-		data = append(data, []interface{}{i + 1, todo.Task, todo.Done})
+		data = append(data, []any{i + 1, todo.Task, todo.Done})
 	}
 
 	return data

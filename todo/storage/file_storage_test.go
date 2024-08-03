@@ -20,9 +20,6 @@ func TestReadData(t *testing.T) {
 	os.WriteFile(dataStorageFilePath, []byte(validJson), 0644)
 	defer os.Remove(dataStorageFilePath)
 
-	type args struct {
-		path string
-	}
 	tests := []struct {
 		name    string
 		args    string
@@ -46,8 +43,6 @@ func TestReadData(t *testing.T) {
 				t.Errorf("ReadData() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			os.Remove(dataStorageFilePath)
-
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ReadData() = %v, want %v", got, tt.want)
 			}
@@ -62,10 +57,6 @@ func TestWriteData(t *testing.T) {
 	os.WriteFile(dataStorageFilePath, []byte(""), 0644)
 	defer os.Remove(dataStorageFilePath)
 
-	type args struct {
-		path     string
-		todoList *todo.Tasks
-	}
 	tests := []struct {
 		name    string
 		args    string

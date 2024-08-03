@@ -22,7 +22,7 @@ var deleteTaskCmd = &cobra.Command{
 		err = storage.PersistChanges(func(tl todo.Tasks) (*todo.Tasks, error) {
 			err := tl.Delete(taskId)
 			if err != nil {
-				return nil, fmt.Errorf("Unable to delete the task %v", err)
+				return nil, fmt.Errorf("unable to delete the task %v", err)
 			}
 			return &tl, nil
 		})

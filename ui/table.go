@@ -7,7 +7,7 @@ import (
 
 type Displayable interface {
 	Schema() []string
-	Data() [][]interface{}
+	Data() [][]any
 	ColumnWidths() []int
 }
 
@@ -61,7 +61,7 @@ func Display(d Displayable) {
 	}
 
 	// Display the footer
-	footer:=formatElement(colWidths, bottomLeft, bottomMiddle, bottomRight)
+	footer := formatElement(colWidths, bottomLeft, bottomMiddle, bottomRight)
 	fmt.Println(footer)
 }
 
