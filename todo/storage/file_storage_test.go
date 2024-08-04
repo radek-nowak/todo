@@ -2,7 +2,6 @@ package storage
 
 import (
 	"encoding/json"
-	"fmt"
 	todo "go_todo/todo/model"
 	"os"
 	"reflect"
@@ -16,14 +15,11 @@ func TestReadData(t *testing.T) {
         {"ID": 2, "Task": "Task 2", "Done": true}
 	]`
 
-	validJsonPath := "data.json"
+	dataStorageFilePath = "data.json"
 
-	os.WriteFile(validJsonPath, []byte(validJson), 0644)
-	defer os.Remove(validJsonPath)
+	os.WriteFile(dataStorageFilePath, []byte(validJson), 0644)
+	defer os.Remove(dataStorageFilePath)
 
-	type args struct {
-		path string
-	}
 	tests := []struct {
 		name    string
 		args    string
@@ -32,7 +28,7 @@ func TestReadData(t *testing.T) {
 	}{
 		{
 			name: "Valid JSON",
-			args: validJsonPath,
+			args: dataStorageFilePath,
 			want: todo.FromTodos([]todo.Todo{
 				{Task: "Task 1", Done: false},
 				{Task: "Task 2", Done: true},
@@ -42,7 +38,7 @@ func TestReadData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ReadData(tt.args)
+			got, err := ReadData()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ReadData() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -56,25 +52,20 @@ func TestReadData(t *testing.T) {
 
 func TestWriteData(t *testing.T) {
 
-	validJsonPath := "data.json"
+	dataStorageFilePath = "test_data.json"
 
-	os.WriteFile(validJsonPath, []byte(""), 0644)
-	defer os.Remove(validJsonPath)
+	os.WriteFile(dataStorageFilePath, []byte(""), 0644)
+	defer os.Remove(dataStorageFilePath)
 
-	type args struct {
-		path     string
-		todoList *todo.Tasks
-	}
 	tests := []struct {
 		name    string
 		args    string
 		want    *todo.Tasks
 		wantErr bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "Valid JSON",
-			args: validJsonPath,
+			args: dataStorageFilePath,
 			want: todo.FromTodos([]todo.Todo{
 				{Task: "Task 1", Done: false},
 			}),
@@ -83,12 +74,11 @@ func TestWriteData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := writeData(tt.args, tt.want); (err != nil) != tt.wantErr {
+			if err := writeData(tt.want); (err != nil) != tt.wantErr {
 				t.Errorf("WriteData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			got, _ := os.ReadFile(validJsonPath)
-			fmt.Println(got)
+			got, _ := os.ReadFile(dataStorageFilePath)
 			var actualTodos []todo.Todo
 			json.Unmarshal(got, &actualTodos)
 			actualTodoList := todo.FromTodos(actualTodos)

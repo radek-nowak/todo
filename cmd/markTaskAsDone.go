@@ -15,18 +15,18 @@ var completeTaskCmd = &cobra.Command{
 	Aliases: []string{"c"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		path := "./tasks.json"
-		err := storage.PersistChanges(path, func(t todo.Tasks) (*todo.Tasks, error) {
+		err := storage.PersistChanges(func(t todo.Tasks) (*todo.Tasks, error) {
 			arg, err := strconv.Atoi(args[0])
 			if err != nil {
 				return nil, err
 			}
 			err = t.CompleteTask(arg)
 			if err != nil {
-				return nil, fmt.Errorf("Unable to complete the task, %v", err)
+				return nil, fmt.Errorf("unable to complete the task, %v", err)
 			}
 			return &t, nil
 		})
+
 		if err != nil {
 			fmt.Println(err)
 		}
