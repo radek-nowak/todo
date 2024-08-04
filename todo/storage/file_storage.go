@@ -49,8 +49,11 @@ func ReadData() (*model.Tasks, error) {
 
 func writeData(todoList *model.Tasks) error {
 	bytes, err := json.Marshal(todoList.GetTodos())
-	err = os.WriteFile(dataStorageFilePath, bytes, 0644)
+	if err != nil {
+		return err
+	}
 
+	err = os.WriteFile(dataStorageFilePath, bytes, 0644)
 	if err != nil {
 		return err
 	}
