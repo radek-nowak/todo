@@ -38,7 +38,7 @@ func TestReadData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ReadData()
+			got, err := ReadData(All)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ReadData() error = %v, wantErr %v", err, tt.wantErr)
 				return
