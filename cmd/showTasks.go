@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"go_todo/todo/storage"
 	"go_todo/ui"
 
@@ -18,8 +19,12 @@ var showTaskCmd = &cobra.Command{
 	Short:   "shows tasks",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		// todo error handling
-		maxItems, _ := cmd.Flags().GetInt(maxItemsFlagName)
+		maxItems, err := cmd.Flags().GetInt(maxItemsFlagName)
+
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
 		showTasks(maxItems)
 	},
 }
