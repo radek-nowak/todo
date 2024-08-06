@@ -2,10 +2,19 @@ package todo
 
 import (
 	"errors"
+	"fmt"
 )
 
 var ErrInvalidTaskId = errors.New("invaid task id")
 var ErrTaskAlreadyCompleted = errors.New("already completed")
+
+type OutOfRangeError struct {
+	value int
+}
+
+func (o *OutOfRangeError) Error() string {
+	return fmt.Sprintf("value %d is out of range", o.value)
+}
 
 type Todo struct {
 	Task string `json:"task,omitempty"`
@@ -64,12 +73,33 @@ func (t *Tasks) Delete(id int) error {
 	return nil
 }
 
+func (t *Tasks) DeleteRange(firstId, lastId int) error {
+
+	if firstId < 0 {
+		firstId = 1
+	}
+
+	if lastId < 0 {
+		lastId = len(t.todos)
+	}
+
+	if err := t.taskIdIsWithinBounds(firstId); err != nil {
+		return &OutOfRangeError{firstId}
+	}
+	if err := t.taskIdIsWithinBounds(lastId); err != nil {
+		return &OutOfRangeError{lastId}
+	}
+
+	t.todos = append(t.todos[:firstId-1], t.todos[lastId:]...)
+	return nil
+}
+
 func (t *Tasks) CompleteTask(id int) error {
 	if err := t.taskIdIsWithinBounds(id); err != nil {
 		return ErrInvalidTaskId
 	}
 
-	if t.todos[id-1].Done == true {
+	if t.todos[id-1].Done {
 		return ErrTaskAlreadyCompleted
 	}
 
