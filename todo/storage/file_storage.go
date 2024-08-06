@@ -8,7 +8,10 @@ import (
 	"path/filepath"
 )
 
-const dataStorageLocationEnvVar = "TODO_DATA"
+const (
+	dataStorageLocationEnvVar = "TODO_DATA"
+	All                       = -1
+)
 
 var dataStorageFilePath string
 var defaultDataStorageLocation = "/.data/todo_data.json"
@@ -34,17 +37,28 @@ func Init() {
 	dataStorageFilePath = defaultDataStorageLocation
 }
 
-func ReadData() (*model.Tasks, error) {
+func ReadData(maxItems int) (*model.Tasks, error) {
 	data, err := os.ReadFile(dataStorageFilePath)
 	if err != nil {
 		return nil, err
 	}
 
 	var todos []model.Todo
-
 	json.Unmarshal(data, &todos)
 
+	todos = topTasks(maxItems, todos)
+
 	return model.FromTodos(todos), nil
+}
+
+func topTasks(maxItems int, todos []model.Todo) []model.Todo {
+	if maxItems > 0 {
+		if maxItems > len(todos) {
+			maxItems = len(todos)
+		}
+		todos = todos[:maxItems]
+	}
+	return todos
 }
 
 func writeData(todoList *model.Tasks) error {
@@ -62,7 +76,7 @@ func writeData(todoList *model.Tasks) error {
 }
 
 func PersistChanges(operation func(model.Tasks) (*model.Tasks, error)) error {
-	tasks, err := ReadData()
+	tasks, err := ReadData(All)
 	if err != nil {
 		return err
 	}
