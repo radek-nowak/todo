@@ -1,8 +1,8 @@
 package main
 
 import (
-	"go_todo/cmd"
-	"go_todo/todo/storage"
+	"github.com/radek-nowak/go_todo_app/cmd"
+	"github.com/radek-nowak/go_todo_app/todo/storage"
 )
 
 func main() {

@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"go_todo/todo/storage"
-	"go_todo/ui"
 
+	"github.com/radek-nowak/go_todo_app/todo/storage"
+	"github.com/radek-nowak/go_todo_app/ui"
 	"github.com/spf13/cobra"
 )
 

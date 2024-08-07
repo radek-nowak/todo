@@ -3,9 +3,10 @@ package storage
 import (
 	"encoding/json"
 	"errors"
-	model "go_todo/todo/model"
 	"os"
 	"path/filepath"
+
+	model "github.com/radek-nowak/go_todo_app/todo/model"
 )
 
 const (

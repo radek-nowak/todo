@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	todo "go_todo/todo/model"
-	"go_todo/todo/storage"
+	model "github.com/radek-nowak/go_todo_app/todo/model"
+	"github.com/radek-nowak/go_todo_app/todo/storage"
 
 	"github.com/spf13/cobra"
 )
@@ -13,7 +13,7 @@ var addTask = &cobra.Command{
 	Aliases: []string{"a"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		storage.PersistChanges(func(t todo.Tasks) (*todo.Tasks, error) {
+		storage.PersistChanges(func(t model.Tasks) (*model.Tasks, error) {
 			t.Add(args[0])
 			return &t, nil
 		})

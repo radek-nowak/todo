@@ -2,10 +2,11 @@ package storage
 
 import (
 	"encoding/json"
-	todo "go_todo/todo/model"
 	"os"
 	"reflect"
 	"testing"
+
+	todo "github.com/radek-nowak/go_todo_app/todo/model"
 )
 
 func TestReadData(t *testing.T) {

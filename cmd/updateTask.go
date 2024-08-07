@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	todo "go_todo/todo/model"
-	"go_todo/todo/storage"
 	"strconv"
 
+	model "github.com/radek-nowak/go_todo_app/todo/model"
+	"github.com/radek-nowak/go_todo_app/todo/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +15,7 @@ var updateTaskCmd = &cobra.Command{
 	Short:   "update task",
 	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := storage.PersistChanges(func(t todo.Tasks) (*todo.Tasks, error) {
+		err := storage.PersistChanges(func(t model.Tasks) (*model.Tasks, error) {
 			taskId, err := strconv.Atoi(args[0])
 			if err != nil {
 				return nil, err

@@ -3,12 +3,12 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	todo "go_todo/todo/model"
-	"go_todo/todo/storage"
 	"os"
 	"strconv"
 	"strings"
 
+	model "github.com/radek-nowak/go_todo_app/todo/model"
+	"github.com/radek-nowak/go_todo_app/todo/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +34,7 @@ var deleteTaskCmd = &cobra.Command{
 			return
 		}
 
-		err := storage.PersistChanges(func(tl todo.Tasks) (*todo.Tasks, error) {
+		err := storage.PersistChanges(func(tl model.Tasks) (*model.Tasks, error) {
 
 			if rangeFlagChanged {
 
