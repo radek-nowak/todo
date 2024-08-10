@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/radek-nowak/go_todo_app/todo/storage"
 	"github.com/spf13/cobra"
 )
+
+var taskStorage storage.Storage = storage.New()
 
 var rootCmd = &cobra.Command{
 	Use:   "todo",

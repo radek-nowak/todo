@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -15,7 +16,7 @@ const (
 )
 
 var dataStorageFilePath string
-var defaultDataStorageLocation = "/.data/todo_data.json"
+var defaultDataStorageLocation = "/.todo_app/data/todo_data.json"
 
 func Init() {
 	storageLocationEnvVar, exists := os.LookupEnv(dataStorageLocationEnvVar)
@@ -38,7 +39,100 @@ func Init() {
 	dataStorageFilePath = defaultDataStorageLocation
 }
 
-func ReadData(maxItems int) (*model.Tasks, error) {
+type Storage interface {
+	FindAll() (*model.Tasks, error)
+	FindTop(maxItems int) (*model.Tasks, error)
+	AddNew(task string)
+	Delete(taskId int) error
+	DeleteRange(from, to int) error
+	Complete(taksId int) error
+	Update(taskId int, task string) error
+}
+
+type JsonFileStorage struct {
+	path *string
+}
+
+func New() *JsonFileStorage {
+	return &JsonFileStorage{path: &dataStorageFilePath}
+}
+
+func (j *JsonFileStorage) FindAll() (*model.Tasks, error) {
+	tasks, err := j.FindTop(All)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func (j *JsonFileStorage) FindTop(maxItems int) (*model.Tasks, error) {
+	data, err := os.ReadFile(dataStorageFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var todos []model.Todo
+
+	err = json.Unmarshal(data, &todos)
+	if err != nil {
+		return nil, err
+	}
+
+	todos = topTasks(maxItems, todos)
+
+	return model.FromTodos(todos), nil
+}
+
+func (j *JsonFileStorage) AddNew(task string) {
+	_ = persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		t.Add(task)
+		return &t, nil
+	})
+}
+
+func (j *JsonFileStorage) Delete(taskId int) error {
+	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		err := t.Delete(taskId)
+		if err != nil {
+			return nil, fmt.Errorf("unable to delete the task %v", err)
+		}
+
+		return &t, nil
+	})
+}
+
+func (j *JsonFileStorage) DeleteRange(from int, to int) error {
+	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		err := t.DeleteRange(from, to)
+		if err != nil {
+			return nil, fmt.Errorf("unable to delete the task from range %v", err)
+		}
+		return &t, nil
+	})
+}
+
+func (j *JsonFileStorage) Complete(taksId int) error {
+	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		err := t.CompleteTask(taksId)
+		if err != nil {
+			return nil, fmt.Errorf("unable to complete the task, %v", err)
+		}
+		return &t, nil
+	})
+}
+
+func (j *JsonFileStorage) Update(taskId int, task string) error {
+	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		err := t.UpdateTask(taskId, task)
+		if err != nil {
+			return nil, fmt.Errorf("unable to update the task, %v", err)
+		}
+		return &t, nil
+	})
+}
+
+func readData(maxItems int) (*model.Tasks, error) {
 	data, err := os.ReadFile(dataStorageFilePath)
 	if err != nil {
 		return nil, err
@@ -76,8 +170,8 @@ func writeData(todoList *model.Tasks) error {
 	return nil
 }
 
-func PersistChanges(operation func(model.Tasks) (*model.Tasks, error)) error {
-	tasks, err := ReadData(All)
+func persistChanges(operation func(model.Tasks) (*model.Tasks, error)) error {
+	tasks, err := readData(All)
 	if err != nil {
 		return err
 	}

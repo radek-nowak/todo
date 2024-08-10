@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	model "github.com/radek-nowak/go_todo_app/todo/model"
-	"github.com/radek-nowak/go_todo_app/todo/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -15,18 +13,12 @@ var completeTaskCmd = &cobra.Command{
 	Aliases: []string{"c"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := storage.PersistChanges(func(t model.Tasks) (*model.Tasks, error) {
-			arg, err := strconv.Atoi(args[0])
-			if err != nil {
-				return nil, err
-			}
-			err = t.CompleteTask(arg)
-			if err != nil {
-				return nil, fmt.Errorf("unable to complete the task, %v", err)
-			}
-			return &t, nil
-		})
+		id, err := strconv.Atoi(args[0])
+		if err != nil {
+			fmt.Println(err)
+		}
 
+		err = taskStorage.Complete(id)
 		if err != nil {
 			fmt.Println(err)
 		}

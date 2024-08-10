@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/radek-nowak/go_todo_app/todo/storage"
 	"github.com/radek-nowak/go_todo_app/ui"
 	"github.com/spf13/cobra"
 )
@@ -20,12 +19,14 @@ var showTaskCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		maxItems, err := cmd.Flags().GetInt(maxItemsFlagName)
-
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println(err)
 		}
 
-		showTasks(maxItems)
+		err = showTasks(maxItems)
+		if err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 
@@ -34,11 +35,12 @@ func init() {
 	showTaskCmd.PersistentFlags().IntP(maxItemsFlagName, maxItemsFlahShortName, 30, "Shows top x tasks.")
 }
 
-func showTasks(maxItems int) {
-	tasks, err := storage.ReadData(maxItems)
+func showTasks(maxItems int) error {
+	tasks, err := taskStorage.FindTop(maxItems)
 	if err != nil {
-		panic("Error occured in show task command")
+		return err
 	}
 
 	ui.Display(tasks)
+	return nil
 }
