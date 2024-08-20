@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var taskStorage storage.Storage = storage.New()
+var taskStorage storage.Storage = storage.NewJsonFileStorage()
 
 var rootCmd = &cobra.Command{
 	Use:   "todo",

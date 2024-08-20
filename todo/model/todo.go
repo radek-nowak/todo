@@ -9,11 +9,11 @@ var ErrInvalidTaskId = errors.New("invaid task id")
 var ErrTaskAlreadyCompleted = errors.New("already completed")
 
 type OutOfRangeError struct {
-	value int
+	Value int
 }
 
 func (o *OutOfRangeError) Error() string {
-	return fmt.Sprintf("value %d is out of range", o.value)
+	return fmt.Sprintf("value %d is out of range", o.Value)
 }
 
 type Todo struct {
@@ -75,11 +75,11 @@ func (t *Tasks) Delete(id int) error {
 
 func (t *Tasks) DeleteRange(firstId, lastId int) error {
 
-	if firstId < 0 {
+	if firstId <= 0 || firstId > lastId || firstId > len(t.todos) {
 		firstId = 1
 	}
 
-	if lastId < 0 {
+	if lastId <= 0 || lastId < firstId || lastId > len(t.todos) {
 		lastId = len(t.todos)
 	}
 

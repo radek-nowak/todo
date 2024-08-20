@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	model "github.com/radek-nowak/go_todo_app/todo/model"
@@ -16,44 +17,41 @@ const (
 )
 
 var dataStorageFilePath string
-var defaultDataStorageLocation = "/.todo_app/data/todo_data.json"
 
-func Init() {
-	storageLocationEnvVar, exists := os.LookupEnv(dataStorageLocationEnvVar)
-	if exists {
-		dataStorageFilePath = storageLocationEnvVar
-		return
-	}
-
-	// if env var is not set, then use the default location starting at home directory
-	homeDir, err := os.UserHomeDir()
+func Init(config Config, fromHomeDir bool) {
+	homeDir, err := getHome(fromHomeDir)
 	if err != nil {
-		panic("Unable to get home directory. " + err.Error())
+		panic(err)
 	}
-	defaultDataStorageLocation = homeDir + defaultDataStorageLocation
 
-	dataStorageDir := filepath.Dir(defaultDataStorageLocation)
+	dataStoragePath := path.Join(homeDir, config.FilePath, config.FileName)
+
+	dataStorageDir := filepath.Dir(dataStoragePath)
 	createDir(dataStorageDir)
 
-	createFile(defaultDataStorageLocation)
-	dataStorageFilePath = defaultDataStorageLocation
+	dataStorageFile := dataStoragePath
+
+	createFile(dataStorageFile)
+	dataStorageFilePath = dataStorageFile
 }
 
-type Storage interface {
-	FindAll() (*model.Tasks, error)
-	FindTop(maxItems int) (*model.Tasks, error)
-	AddNew(task string)
-	Delete(taskId int) error
-	DeleteRange(from, to int) error
-	Complete(taksId int) error
-	Update(taskId int, task string) error
+// todo hide to config
+func getHome(get bool) (string, error) {
+	if !get {
+		return "", nil
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return homeDir, nil
 }
 
 type JsonFileStorage struct {
 	path *string
 }
 
-func New() *JsonFileStorage {
+func NewJsonFileStorage() *JsonFileStorage {
 	return &JsonFileStorage{path: &dataStorageFilePath}
 }
 
@@ -70,6 +68,10 @@ func (j *JsonFileStorage) FindTop(maxItems int) (*model.Tasks, error) {
 	data, err := os.ReadFile(dataStorageFilePath)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(data) == 0 {
+		return model.FromTodos([]model.Todo{}), nil
 	}
 
 	var todos []model.Todo
@@ -95,7 +97,7 @@ func (j *JsonFileStorage) Delete(taskId int) error {
 	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
 		err := t.Delete(taskId)
 		if err != nil {
-			return nil, fmt.Errorf("unable to delete the task %v", err)
+			return nil, fmt.Errorf("unable to delete the task %w", err)
 		}
 
 		return &t, nil
@@ -106,7 +108,7 @@ func (j *JsonFileStorage) DeleteRange(from int, to int) error {
 	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
 		err := t.DeleteRange(from, to)
 		if err != nil {
-			return nil, fmt.Errorf("unable to delete the task from range %v", err)
+			return nil, fmt.Errorf("unable to delete the task from range %w", err)
 		}
 		return &t, nil
 	})
