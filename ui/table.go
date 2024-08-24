@@ -13,17 +13,17 @@ type Displayable interface {
 
 // Table borders
 const (
-	topLeft      = "╭"
-	topRight     = "╮"
-	bottomLeft   = "╰"
-	bottomRight  = "╯"
-	horizontal   = "─"
-	vertical     = "│"
-	middleLeft   = "├"
-	middleRight  = "┤"
-	middle       = "┼"
-	topMiddle    = "┬"
-	bottomMiddle = "┴"
+	topLeft      = "╔"
+	topRight     = "╗"
+	bottomLeft   = "╚"
+	bottomRight  = "╝"
+	horizontal   = "═"
+	vertical     = "║"
+	middleLeft   = "╠"
+	middleRight  = "╣"
+	middle       = "╬"
+	topMiddle    = "╦"
+	bottomMiddle = "╩"
 )
 
 func Display(d Displayable) {
