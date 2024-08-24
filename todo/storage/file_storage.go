@@ -13,6 +13,8 @@ import (
 
 const (
 	dataStorageLocationEnvVar = "TODO_DATA"
+
+	// A flag that is used to signal that all the tasks should be found.
 	All                       = -1
 )
 
@@ -118,7 +120,7 @@ func (j *JsonFileStorage) Complete(taksId int) error {
 	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
 		err := t.CompleteTask(taksId)
 		if err != nil {
-			return nil, fmt.Errorf("unable to complete the task, %v", err)
+			return nil, fmt.Errorf("unable to complete the task, %w", err)
 		}
 		return &t, nil
 	})

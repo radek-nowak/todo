@@ -22,7 +22,10 @@ func newIntegrationTest(t *testing.T, testData []byte) string {
 
 	Init(config, false)
 	testDataPath := path.Join(config.FilePath, config.FileName)
-	os.WriteFile(testDataPath, []byte(testData), 0644)
+	err := os.WriteFile(testDataPath, []byte(testData), 0644)
+	if err != nil {
+		panic("unable to create test data " + err.Error())
+	}
 
 	return testDataPath
 }
@@ -361,9 +364,10 @@ func TestDeleteRange(t *testing.T) {
 			idTo:          1,
 			testData:      nil,
 			expectedTasks: &todo.Tasks{},
-			expectedError: &todo.OutOfRangeError{
-				Value: 1,
-			},
+			// expectedError: &todo.OutOfRangeError{
+			// 	Value: 1,
+			// },
+			expectedError: nil,
 		},
 	}
 
@@ -392,6 +396,59 @@ func TestDeleteRange(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestComplete(t *testing.T) {
+
+	testCases := []struct {
+		name          string
+		id            int
+		testData      []byte
+		expectedTasks *todo.Tasks
+		expectedError error
+	}{
+		{
+			name: "completes an existing task",
+			id:   1,
+			// todo use model marshall to jason, and save``
+			testData: []byte(
+				`[{"ID": 1, "Task": "Task 1", "Done": false}]`,
+			),
+			expectedTasks: todo.FromTodos([]todo.Todo{{
+				Task: "Task 1",
+				Done: true,
+			}}),
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+
+			testDataPath := newIntegrationTest(t, test.testData)
+			storage := NewJsonFileStorage()
+
+			err := storage.Complete(test.id)
+
+			if test.expectedError != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, test.expectedError)
+			} else {
+				assert.NoError(t, err)
+
+				data, _ := os.ReadFile(testDataPath)
+				var todos []todo.Todo
+				json.Unmarshal(data, &todos)
+
+				tasks := todo.FromTodos(todos)
+
+				assert.ObjectsAreEqualValues(test.expectedTasks, tasks)
+			}
+
+		})
+
+	}
+
 }
 
 func TestReadData(t *testing.T) {

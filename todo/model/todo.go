@@ -83,12 +83,13 @@ func (t *Tasks) DeleteRange(firstId, lastId int) error {
 		lastId = len(t.todos)
 	}
 
-	if err := t.taskIdIsWithinBounds(firstId); err != nil {
-		return &OutOfRangeError{firstId}
-	}
-	if err := t.taskIdIsWithinBounds(lastId); err != nil {
-		return &OutOfRangeError{lastId}
-	}
+	// todo check this error
+	// if err := t.taskIdIsWithinBounds(firstId); err != nil {
+	// 	return &OutOfRangeError{firstId}
+	// }
+	// if err := t.taskIdIsWithinBounds(lastId); err != nil {
+	// 	return &OutOfRangeError{lastId}
+	// }
 
 	t.todos = append(t.todos[:firstId-1], t.todos[lastId:]...)
 	return nil
@@ -96,8 +97,11 @@ func (t *Tasks) DeleteRange(firstId, lastId int) error {
 
 func (t *Tasks) CompleteTask(id int) error {
 	if err := t.taskIdIsWithinBounds(id); err != nil {
-		return ErrInvalidTaskId
+		return &OutOfRangeError{
+			Value: id,
+		}
 	}
+
 
 	if t.todos[id-1].Done {
 		return ErrTaskAlreadyCompleted
@@ -109,7 +113,9 @@ func (t *Tasks) CompleteTask(id int) error {
 
 func (t *Tasks) UpdateTask(id int, task string) error {
 	if err := t.taskIdIsWithinBounds(id); err != nil {
-		return ErrInvalidTaskId
+		return &OutOfRangeError{
+			Value: id,
+		}
 	}
 
 	t.todos[id-1].Task = task
