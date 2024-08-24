@@ -9,11 +9,11 @@ var ErrInvalidTaskId = errors.New("invaid task id")
 var ErrTaskAlreadyCompleted = errors.New("already completed")
 
 type OutOfRangeError struct {
-	value int
+	Value int
 }
 
 func (o *OutOfRangeError) Error() string {
-	return fmt.Sprintf("value %d is out of range", o.value)
+	return fmt.Sprintf("value %d is out of range", o.Value)
 }
 
 type Todo struct {
@@ -40,7 +40,7 @@ func (t Tasks) Data() [][]any {
 }
 
 func (Tasks) ColumnWidths() []int {
-	return []int{3, 55, 5}
+	return []int{3, 70, 5}
 }
 
 func NewTodoList() *Tasks {
@@ -75,20 +75,21 @@ func (t *Tasks) Delete(id int) error {
 
 func (t *Tasks) DeleteRange(firstId, lastId int) error {
 
-	if firstId < 0 {
+	if firstId <= 0 || firstId > lastId || firstId > len(t.todos) {
 		firstId = 1
 	}
 
-	if lastId < 0 {
+	if lastId <= 0 || lastId < firstId || lastId > len(t.todos) {
 		lastId = len(t.todos)
 	}
 
-	if err := t.taskIdIsWithinBounds(firstId); err != nil {
-		return &OutOfRangeError{firstId}
-	}
-	if err := t.taskIdIsWithinBounds(lastId); err != nil {
-		return &OutOfRangeError{lastId}
-	}
+	// todo check this error
+	// if err := t.taskIdIsWithinBounds(firstId); err != nil {
+	// 	return &OutOfRangeError{firstId}
+	// }
+	// if err := t.taskIdIsWithinBounds(lastId); err != nil {
+	// 	return &OutOfRangeError{lastId}
+	// }
 
 	t.todos = append(t.todos[:firstId-1], t.todos[lastId:]...)
 	return nil
@@ -96,8 +97,11 @@ func (t *Tasks) DeleteRange(firstId, lastId int) error {
 
 func (t *Tasks) CompleteTask(id int) error {
 	if err := t.taskIdIsWithinBounds(id); err != nil {
-		return ErrInvalidTaskId
+		return &OutOfRangeError{
+			Value: id,
+		}
 	}
+
 
 	if t.todos[id-1].Done {
 		return ErrTaskAlreadyCompleted
@@ -109,7 +113,9 @@ func (t *Tasks) CompleteTask(id int) error {
 
 func (t *Tasks) UpdateTask(id int, task string) error {
 	if err := t.taskIdIsWithinBounds(id); err != nil {
-		return ErrInvalidTaskId
+		return &OutOfRangeError{
+			Value: id,
+		}
 	}
 
 	t.todos[id-1].Task = task
