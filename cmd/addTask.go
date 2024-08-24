@@ -1,8 +1,10 @@
 package cmd
 
 import (
-	model "github.com/radek-nowak/go_todo_app/todo/model"
-	"github.com/radek-nowak/go_todo_app/todo/storage"
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -11,15 +13,33 @@ var addTask = &cobra.Command{
 	Use:     "add",
 	Short:   "add new task",
 	Aliases: []string{"a"},
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		storage.PersistChanges(func(t model.Tasks) (*model.Tasks, error) {
-			t.Add(args[0])
-			return &t, nil
-		})
+		task := getTask(args)
+		taskStorage.AddNew(task)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(addTask)
+}
+
+func getTask(args []string) string {
+	if len(args) == 0 {
+
+		reader := bufio.NewReader(os.Stdin)
+
+		fmt.Print("Provide task: ")
+
+		taskString, err := reader.ReadString('\n')
+
+		if err != nil {
+			panic(err)
+		}
+
+		return strings.TrimSpace(taskString)
+	} else {
+		return args[1]
+	}
+
 }

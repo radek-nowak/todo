@@ -1,92 +1,174 @@
-package storage
+package storage_test
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
-	"reflect"
+	"path"
 	"testing"
 
-	todo "github.com/radek-nowak/go_todo_app/todo/model"
+	model "github.com/radek-nowak/go_todo_app/todo/model"
+	"github.com/radek-nowak/go_todo_app/todo/storage"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestReadData(t *testing.T) {
+type integrationTest struct {
+	storage      *storage.JsonFileStorage
+	testFilePath string
+}
 
-	validJson := `[
-		{"ID": 1, "Task": "Task 1", "Done": false},
-        {"ID": 2, "Task": "Task 2", "Done": true}
-	]`
+func newIntegrationTest(t *testing.T) *integrationTest {
+	tmpDir := t.TempDir()
 
-	dataStorageFilePath = "data.json"
+	tmpFile := "todo_test.json"
 
-	os.WriteFile(dataStorageFilePath, []byte(validJson), 0644)
-	defer os.Remove(dataStorageFilePath)
+	config := storage.Config{FilePath: tmpDir, FileName: tmpFile}
+	storage.Init(config, false)
 
-	tests := []struct {
-		name    string
-		args    string
-		want    *todo.Tasks
-		wantErr bool
-	}{
-		{
-			name: "Valid JSON",
-			args: dataStorageFilePath,
-			want: todo.FromTodos([]todo.Todo{
-				{Task: "Task 1", Done: false},
-				{Task: "Task 2", Done: true},
-			}),
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ReadData(All)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadData() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReadData() = %v, want %v", got, tt.want)
-			}
-		})
+	return &integrationTest{
+		storage:      storage.NewJsonFileStorage(),
+		testFilePath: path.Join(tmpDir, tmpFile),
 	}
 }
 
-func TestWriteData(t *testing.T) {
-
-	dataStorageFilePath = "test_data.json"
-
-	os.WriteFile(dataStorageFilePath, []byte(""), 0644)
-	defer os.Remove(dataStorageFilePath)
-
-	tests := []struct {
-		name    string
-		args    string
-		want    *todo.Tasks
-		wantErr bool
-	}{
-		{
-			name: "Valid JSON",
-			args: dataStorageFilePath,
-			want: todo.FromTodos([]todo.Todo{
-				{Task: "Task 1", Done: false},
-			}),
-			wantErr: false,
-		},
+func (it *integrationTest) readFile() ([]model.Todo, error) {
+	data, err := os.ReadFile(it.testFilePath)
+	if err != nil {
+		return nil, err
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := writeData(tt.want); (err != nil) != tt.wantErr {
-				t.Errorf("WriteData() error = %v, wantErr %v", err, tt.wantErr)
-			}
 
-			got, _ := os.ReadFile(dataStorageFilePath)
-			var actualTodos []todo.Todo
-			json.Unmarshal(got, &actualTodos)
-			actualTodoList := todo.FromTodos(actualTodos)
+	var todos []model.Todo
+	err = json.Unmarshal(data, &todos)
+	return todos, err
+}
 
-			if !reflect.DeepEqual(actualTodoList, tt.want) {
-				t.Errorf("ReadData() = %v, want %v", got, tt.want)
-			}
-		})
+func TestJsonFileStorage_AddNewAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	it.storage.AddNew("Task 1")
+	it.storage.AddNew("Task 2")
+
+	// Verify tasks persisted to file
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(todos))
+	assert.Equal(t, "Task 1", todos[0].Task)
+	assert.Equal(t, "Task 2", todos[1].Task)
+}
+
+func TestJsonFileStorage_DeleteAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	it.storage.AddNew("Task 1")
+	it.storage.AddNew("Task 2")
+	_, err := it.readFile()
+	assert.NoError(t, err)
+
+	err = it.storage.Delete(1)
+	assert.NoError(t, err)
+
+	// Verify tasks persisted to file
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+	assert.Equal(t, "Task 2", todos[0].Task)
+}
+
+func TestJsonFileStorage_UpdateAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	it.storage.AddNew("Task 1")
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+
+	err = it.storage.Update(1, "Updated Task 1")
+	assert.NoError(t, err)
+
+	// Verify tasks persisted to file
+	todos, err = it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+	assert.Equal(t, "Updated Task 1", todos[0].Task)
+}
+
+func TestJsonFileStorage_CompleteAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	it.storage.AddNew("Task 1")
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+
+	err = it.storage.Complete(1)
+	assert.NoError(t, err)
+
+	// Verify tasks persisted to file
+	todos, err = it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+	assert.True(t, todos[0].Done)
+}
+
+func TestJsonFileStorage_DeleteRangeAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	it.storage.AddNew("Task 1")
+	it.storage.AddNew("Task 2")
+	it.storage.AddNew("Task 3")
+
+	err := it.storage.DeleteRange(1, 2)
+	assert.NoError(t, err)
+
+	// Verify tasks persisted to file
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+	assert.Equal(t, "Task 3", todos[0].Task)
+}
+
+func TestJsonFileStorage_DeleteInvalidID(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	it.storage.AddNew("Task 1")
+	err := it.storage.Delete(99) // Invalid ID
+	assert.ErrorIs(t, err, model.ErrInvalidTaskId)
+
+	// Verify no tasks were deleted
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+}
+
+func TestJsonFileStorage_CompleteAlreadyCompletedTask(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	it.storage.AddNew("Task 1")
+	err := it.storage.Complete(1)
+	assert.NoError(t, err)
+
+	// Attempt to complete the task again
+	err = it.storage.Complete(1)
+	assert.ErrorIs(t, err, model.ErrTaskAlreadyCompleted)
+}
+
+func TestJsonFileStorage_UpdateInvalidID(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	err := it.storage.Update(99, "Updated Task") // Invalid ID
+	if assert.Error(t, err, "should return an error for invalid task ID") {
+		var expectedError *model.OutOfRangeError
+		assert.True(t, errors.As(err, &expectedError), "error should be of type OutOfRangeError")
+		assert.Equal(t, 99, expectedError.Value, "the OutOfRangeError should have the value 99")
 	}
 }
+
+func TestJsonFileStorage_CompleteInvalidID(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	err := it.storage.Complete(99) // Invalid ID
+	if assert.Error(t, err, "should return an error for invalid task ID") {
+		var expectedError *model.OutOfRangeError
+		assert.True(t, errors.As(err, &expectedError), "error should be of type OutOfRangeError")
+		assert.Equal(t, 99, expectedError.Value, "the OutOfRangeError should have the value 99")
+	}
+}
+

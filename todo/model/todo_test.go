@@ -107,7 +107,7 @@ func TestTasks(t *testing.T) {
 		// when
 		err := tasks.CompleteTask(2)
 		// then
-		assertError(t, err, ErrInvalidTaskId)
+		assertError(t, err, &OutOfRangeError{Value: 2})
 	})
 
 	t.Run("Complete already completed task", func(t *testing.T) {
@@ -154,7 +154,7 @@ func TestTasks(t *testing.T) {
 		newTask := "new task 1"
 		err := tasks.UpdateTask(2, newTask)
 		// then
-		assertError(t, err, ErrInvalidTaskId)
+		assertError(t, err, &OutOfRangeError{Value: 2})
 	})
 }
 

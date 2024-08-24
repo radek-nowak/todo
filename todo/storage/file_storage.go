@@ -3,7 +3,9 @@ package storage
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	model "github.com/radek-nowak/go_todo_app/todo/model"
@@ -11,34 +13,130 @@ import (
 
 const (
 	dataStorageLocationEnvVar = "TODO_DATA"
+
+	// A flag that is used to signal that all the tasks should be found.
 	All                       = -1
 )
 
 var dataStorageFilePath string
-var defaultDataStorageLocation = "/.data/todo_data.json"
 
-func Init() {
-	storageLocationEnvVar, exists := os.LookupEnv(dataStorageLocationEnvVar)
-	if exists {
-		dataStorageFilePath = storageLocationEnvVar
-		return
-	}
-
-	// if env var is not set, then use the default location starting at home directory
-	homeDir, err := os.UserHomeDir()
+func Init(config Config, fromHomeDir bool) {
+	homeDir, err := getHome(fromHomeDir)
 	if err != nil {
-		panic("Unable to get home directory. " + err.Error())
+		panic(err)
 	}
-	defaultDataStorageLocation = homeDir + defaultDataStorageLocation
 
-	dataStorageDir := filepath.Dir(defaultDataStorageLocation)
+	dataStoragePath := path.Join(homeDir, config.FilePath, config.FileName)
+
+	dataStorageDir := filepath.Dir(dataStoragePath)
 	createDir(dataStorageDir)
 
-	createFile(defaultDataStorageLocation)
-	dataStorageFilePath = defaultDataStorageLocation
+	dataStorageFile := dataStoragePath
+
+	createFile(dataStorageFile)
+	dataStorageFilePath = dataStorageFile
 }
 
-func ReadData(maxItems int) (*model.Tasks, error) {
+// todo hide to config
+func getHome(get bool) (string, error) {
+	if !get {
+		return "", nil
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return homeDir, nil
+}
+
+type JsonFileStorage struct {
+	path *string
+}
+
+func NewJsonFileStorage() *JsonFileStorage {
+	return &JsonFileStorage{path: &dataStorageFilePath}
+}
+
+func (j *JsonFileStorage) FindAll() (*model.Tasks, error) {
+	tasks, err := j.FindTop(All)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func (j *JsonFileStorage) FindTop(maxItems int) (*model.Tasks, error) {
+	data, err := os.ReadFile(dataStorageFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		return model.FromTodos([]model.Todo{}), nil
+	}
+
+	var todos []model.Todo
+
+	err = json.Unmarshal(data, &todos)
+	if err != nil {
+		return nil, err
+	}
+
+	todos = topTasks(maxItems, todos)
+
+	return model.FromTodos(todos), nil
+}
+
+func (j *JsonFileStorage) AddNew(task string) {
+	_ = persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		t.Add(task)
+		return &t, nil
+	})
+}
+
+func (j *JsonFileStorage) Delete(taskId int) error {
+	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		err := t.Delete(taskId)
+		if err != nil {
+			return nil, fmt.Errorf("unable to delete the task %w", err)
+		}
+
+		return &t, nil
+	})
+}
+
+func (j *JsonFileStorage) DeleteRange(from int, to int) error {
+	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		err := t.DeleteRange(from, to)
+		if err != nil {
+			return nil, fmt.Errorf("unable to delete the task from range %w", err)
+		}
+		return &t, nil
+	})
+}
+
+func (j *JsonFileStorage) Complete(taksId int) error {
+	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		err := t.CompleteTask(taksId)
+		if err != nil {
+			return nil, fmt.Errorf("unable to complete the task, %w", err)
+		}
+		return &t, nil
+	})
+}
+
+func (j *JsonFileStorage) Update(taskId int, task string) error {
+	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
+		err := t.UpdateTask(taskId, task)
+		if err != nil {
+			return nil, fmt.Errorf("unable to update the task, %w", err)
+		}
+		return &t, nil
+	})
+}
+
+func readData(maxItems int) (*model.Tasks, error) {
 	data, err := os.ReadFile(dataStorageFilePath)
 	if err != nil {
 		return nil, err
@@ -76,8 +174,8 @@ func writeData(todoList *model.Tasks) error {
 	return nil
 }
 
-func PersistChanges(operation func(model.Tasks) (*model.Tasks, error)) error {
-	tasks, err := ReadData(All)
+func persistChanges(operation func(model.Tasks) (*model.Tasks, error)) error {
+	tasks, err := readData(All)
 	if err != nil {
 		return err
 	}

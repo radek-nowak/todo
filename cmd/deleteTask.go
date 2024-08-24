@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	model "github.com/radek-nowak/go_todo_app/todo/model"
-	"github.com/radek-nowak/go_todo_app/todo/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -34,41 +32,31 @@ var deleteTaskCmd = &cobra.Command{
 			return
 		}
 
-		err := storage.PersistChanges(func(tl model.Tasks) (*model.Tasks, error) {
+		var cmdErr error
 
-			if rangeFlagChanged {
+		if rangeFlagChanged {
 
-				lowerRange, err := cmd.Flags().GetInt(lowerRangeFlagName)
-				if err != nil {
-					panic(err.Error())
-				}
-
-				upperRange, err := cmd.Flags().GetInt(upperRangeFlagName)
-				if err != nil {
-					panic(err.Error())
-				}
-
-				err = tl.DeleteRange(lowerRange, upperRange)
-				if err != nil {
-					return nil, err
-				}
-
-				return &tl, nil
-
-			} else {
-				taskId := getTaskId(args)
-				err := tl.Delete(taskId)
-				if err != nil {
-					return nil, fmt.Errorf("unable to delete the task %v", err)
-				}
-
-				return &tl, nil
+			lowerRange, err := cmd.Flags().GetInt(lowerRangeFlagName)
+			if err != nil {
+				panic(err)
 			}
 
-		})
-		if err != nil {
-			fmt.Println(err)
+			upperRange, err := cmd.Flags().GetInt(upperRangeFlagName)
+			if err != nil {
+				panic(err)
+			}
+
+			cmdErr = taskStorage.DeleteRange(lowerRange, upperRange)
+
+		} else {
+			taskId := getTaskId(args)
+			cmdErr = taskStorage.Delete(taskId)
 		}
+
+		if cmdErr != nil {
+			panic(cmdErr)
+		}
+
 	},
 }
 
