@@ -40,7 +40,7 @@ func (t Tasks) Data() [][]any {
 }
 
 func (Tasks) ColumnWidths() []int {
-	return []int{3, 55, 5}
+	return []int{3, 70, 5}
 }
 
 func NewTodoList() *Tasks {
