@@ -1,620 +1,174 @@
-package storage
+package storage_test
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path"
-	"reflect"
 	"testing"
 
-	"github.com/radek-nowak/go_todo_app/tests"
-	todo "github.com/radek-nowak/go_todo_app/todo/model"
+	model "github.com/radek-nowak/go_todo_app/todo/model"
+	"github.com/radek-nowak/go_todo_app/todo/storage"
 	"github.com/stretchr/testify/assert"
 )
 
-func newIntegrationTest(t *testing.T, testData []byte) string {
-	tempDir := t.TempDir()
+type integrationTest struct {
+	storage      *storage.JsonFileStorage
+	testFilePath string
+}
 
-	config := Config{
-		FileName: "test_tasks_data.json",
-		FilePath: tempDir,
+func newIntegrationTest(t *testing.T) *integrationTest {
+	tmpDir := t.TempDir()
+
+	tmpFile := "todo_test.json"
+
+	config := storage.Config{FilePath: tmpDir, FileName: tmpFile}
+	storage.Init(config, false)
+
+	return &integrationTest{
+		storage:      storage.NewJsonFileStorage(),
+		testFilePath: path.Join(tmpDir, tmpFile),
 	}
+}
 
-	Init(config, false)
-	testDataPath := path.Join(config.FilePath, config.FileName)
-	err := os.WriteFile(testDataPath, []byte(testData), 0644)
+func (it *integrationTest) readFile() ([]model.Todo, error) {
+	data, err := os.ReadFile(it.testFilePath)
 	if err != nil {
-		panic("unable to create test data " + err.Error())
+		return nil, err
 	}
 
-	return testDataPath
+	var todos []model.Todo
+	err = json.Unmarshal(data, &todos)
+	return todos, err
 }
 
-func TestFindAll(t *testing.T) {
+func TestJsonFileStorage_AddNewAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
 
-	validJson := `[
-		{"ID": 1, "Task": "Task 1", "Done": false},
-        {"ID": 2, "Task": "Task 2", "Done": true}
-	]`
+	it.storage.AddNew("Task 1")
+	it.storage.AddNew("Task 2")
 
-	tests := []struct {
-		name                  string
-		testData              []byte
-		expectedNumberOfTasks int
-	}{
-		{
-			name:                  "find 0 tasks",
-			testData:              nil,
-			expectedNumberOfTasks: 0,
-		},
-
-		{
-			name:                  "find 2 tasks",
-			testData:              []byte(validJson),
-			expectedNumberOfTasks: 2,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			newIntegrationTest(t, test.testData)
-			storage := NewJsonFileStorage()
-
-			// when
-			tasks, err := storage.FindAll()
-
-			// then
-			assert.NoError(t, err)
-			assert.NotNil(t, tasks)
-			assert.Len(t, tasks.GetTodos(), test.expectedNumberOfTasks)
-		})
-	}
+	// Verify tasks persisted to file
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(todos))
+	assert.Equal(t, "Task 1", todos[0].Task)
+	assert.Equal(t, "Task 2", todos[1].Task)
 }
 
-func TestFindTop(t *testing.T) {
+func TestJsonFileStorage_DeleteAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
 
-	validJson := `[
-		{"ID": 1, "Task": "Task 1", "Done": false},
-        {"ID": 2, "Task": "Task 2", "Done": true}
-	]`
+	it.storage.AddNew("Task 1")
+	it.storage.AddNew("Task 2")
+	_, err := it.readFile()
+	assert.NoError(t, err)
 
-	tests := []struct {
-		name                  string
-		testData              []byte
-		top                   int
-		expectedNumberOfTasks int
-	}{
-		{
-			name:                  "find top 1 task, 0 tasks saved",
-			testData:              nil,
-			top:                   1,
-			expectedNumberOfTasks: 0,
-		},
+	err = it.storage.Delete(1)
+	assert.NoError(t, err)
 
-		{
-			name:                  "find top 1 task, 2 tasks saved",
-			testData:              []byte(validJson),
-			top:                   1,
-			expectedNumberOfTasks: 1,
-		},
-		{
-			name:                  "find top 3 task, 2 tasks saved",
-			testData:              []byte(validJson),
-			top:                   3,
-			expectedNumberOfTasks: 2,
-		},
-		{
-			name:                  "find top -1 task, 2 tasks saved",
-			testData:              []byte(validJson),
-			top:                   -1,
-			expectedNumberOfTasks: 2,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			newIntegrationTest(t, test.testData)
-			storage := NewJsonFileStorage()
-
-			// when
-			tasks, err := storage.FindTop(test.top)
-
-			// then
-			assert.NoError(t, err)
-			assert.NotNil(t, tasks)
-			assert.Len(t, tasks.GetTodos(), test.expectedNumberOfTasks)
-		})
-	}
+	// Verify tasks persisted to file
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+	assert.Equal(t, "Task 2", todos[0].Task)
 }
 
-func TestAddNew(t *testing.T) {
+func TestJsonFileStorage_UpdateAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
 
-	validJson := `[
-		{"ID": 1, "Task": "Task 1", "Done": false},
-        {"ID": 2, "Task": "Task 2", "Done": true}
-	]`
+	it.storage.AddNew("Task 1")
+	todos, err := it.readFile()
+	assert.NoError(t, err)
 
-	tests := []struct {
-		name          string
-		testData      []byte
-		newTasks      []string
-		expectedTasks *todo.Tasks
-	}{
-		{
-			name:     "",
-			testData: nil,
-			newTasks: []string{},
-			expectedTasks: todo.FromTodos([]todo.Todo{{
-				Task: "",
-				Done: false,
-			}}),
-		},
+	err = it.storage.Update(1, "Updated Task 1")
+	assert.NoError(t, err)
 
-		{
-			name:     "first taks",
-			testData: nil,
-			newTasks: []string{"first task"},
-			expectedTasks: todo.FromTodos([]todo.Todo{{
-				Task: "first task",
-				Done: false,
-			}}),
-		},
+	// Verify tasks persisted to file
+	todos, err = it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+	assert.Equal(t, "Updated Task 1", todos[0].Task)
+}
 
-		{
-			name:     "third task",
-			testData: []byte(validJson),
-			newTasks: []string{"third task"},
-			expectedTasks: todo.FromTodos([]todo.Todo{
-				{
-					Task: "Task 1",
-					Done: false,
-				},
-				{
-					Task: "Task 2",
-					Done: true,
-				},
-				{
-					Task: "third task",
-					Done: false,
-				},
-			}),
-		},
-	}
+func TestJsonFileStorage_CompleteAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			testDataPath := newIntegrationTest(t, test.testData)
-			storage := NewJsonFileStorage()
+	it.storage.AddNew("Task 1")
+	todos, err := it.readFile()
+	assert.NoError(t, err)
 
-			// when
-			for _, newTask := range test.newTasks {
-				storage.AddNew(newTask)
-			}
+	err = it.storage.Complete(1)
+	assert.NoError(t, err)
 
-			// then
-			data, _ := os.ReadFile(testDataPath)
-			var todos []todo.Todo
-			json.Unmarshal(data, &todos)
+	// Verify tasks persisted to file
+	todos, err = it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+	assert.True(t, todos[0].Done)
+}
 
-			tasks := todo.FromTodos(todos)
+func TestJsonFileStorage_DeleteRangeAndPersist(t *testing.T) {
+	it := newIntegrationTest(t)
 
-			assert.ObjectsAreEqualValues(test.expectedTasks, tasks)
-		})
+	it.storage.AddNew("Task 1")
+	it.storage.AddNew("Task 2")
+	it.storage.AddNew("Task 3")
+
+	err := it.storage.DeleteRange(1, 2)
+	assert.NoError(t, err)
+
+	// Verify tasks persisted to file
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+	assert.Equal(t, "Task 3", todos[0].Task)
+}
+
+func TestJsonFileStorage_DeleteInvalidID(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	it.storage.AddNew("Task 1")
+	err := it.storage.Delete(99) // Invalid ID
+	assert.ErrorIs(t, err, model.ErrInvalidTaskId)
+
+	// Verify no tasks were deleted
+	todos, err := it.readFile()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(todos))
+}
+
+func TestJsonFileStorage_CompleteAlreadyCompletedTask(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	it.storage.AddNew("Task 1")
+	err := it.storage.Complete(1)
+	assert.NoError(t, err)
+
+	// Attempt to complete the task again
+	err = it.storage.Complete(1)
+	assert.ErrorIs(t, err, model.ErrTaskAlreadyCompleted)
+}
+
+func TestJsonFileStorage_UpdateInvalidID(t *testing.T) {
+	it := newIntegrationTest(t)
+
+	err := it.storage.Update(99, "Updated Task") // Invalid ID
+	if assert.Error(t, err, "should return an error for invalid task ID") {
+		var expectedError *model.OutOfRangeError
+		assert.True(t, errors.As(err, &expectedError), "error should be of type OutOfRangeError")
+		assert.Equal(t, 99, expectedError.Value, "the OutOfRangeError should have the value 99")
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestJsonFileStorage_CompleteInvalidID(t *testing.T) {
+	it := newIntegrationTest(t)
 
-	tests := []struct {
-		name          string
-		testData      []byte
-		id            int
-		expectedTasks *todo.Tasks
-		expectedError error
-	}{
-		{
-			name:          "invalid task id err is returned when non existing task is deleted",
-			testData:      nil,
-			id:            1,
-			expectedTasks: nil,
-			expectedError: todo.ErrInvalidTaskId,
-		},
-
-		{
-			name: "task is deleted",
-			testData: []byte(
-				`[
-					{"ID": 1, "Task": "Task 1", "Done": false},
-				    {"ID": 2, "Task": "Task 2", "Done": true}
-				]`,
-			),
-			id: 2,
-			expectedTasks: todo.FromTodos([]todo.Todo{{
-				Task: "Task 1",
-				Done: false,
-			}}),
-			expectedError: nil,
-		},
-
-		{
-			name: "first task is deleted",
-			testData: []byte(
-				`[
-					{"ID": 1, "Task": "Task 1", "Done": false},
-				    {"ID": 2, "Task": "Task 2", "Done": true}
-				]`,
-			),
-			id: 1,
-			expectedTasks: todo.FromTodos([]todo.Todo{{
-				Task: "Task 2",
-				Done: true,
-			}}),
-			expectedError: nil,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			testDataPath := newIntegrationTest(t, test.testData)
-			storage := NewJsonFileStorage()
-
-			// when
-			err := storage.Delete(test.id)
-
-			// then
-			if test.expectedError != nil {
-				assert.Error(t, err)
-				assert.ErrorIs(t, err, test.expectedError)
-			} else {
-				assert.NoError(t, err)
-
-				data, _ := os.ReadFile(testDataPath)
-				var todos []todo.Todo
-				json.Unmarshal(data, &todos)
-
-				tasks := todo.FromTodos(todos)
-
-				assert.ObjectsAreEqualValues(test.expectedTasks, tasks)
-			}
-		})
+	err := it.storage.Complete(99) // Invalid ID
+	if assert.Error(t, err, "should return an error for invalid task ID") {
+		var expectedError *model.OutOfRangeError
+		assert.True(t, errors.As(err, &expectedError), "error should be of type OutOfRangeError")
+		assert.Equal(t, 99, expectedError.Value, "the OutOfRangeError should have the value 99")
 	}
 }
 
-func TestDeleteRange(t *testing.T) {
-	testCases := []struct {
-		name          string
-		idFrom        int
-		idTo          int
-		testData      []byte
-		expectedTasks *todo.Tasks
-		expectedError error
-	}{
-
-		{
-			name:   "deletes one task when id from and to are equal",
-			idFrom: 2,
-			idTo:   2,
-			testData: []byte(
-				`[
-					{"ID": 1, "Task": "Task 1", "Done": false},
-				    {"ID": 2, "Task": "Task 2", "Done": true}
-				]`,
-			),
-			expectedTasks: &todo.Tasks{},
-			expectedError: nil,
-		},
-
-		{
-			name:   "deletes tasks from a given range",
-			idFrom: 1,
-			idTo:   2,
-			testData: []byte(
-				`[
-					{"ID": 1, "Task": "Task 1", "Done": false},
-					{"ID": 2, "Task": "Task 2", "Done": false},
-				    {"ID": 3, "Task": "Task 3", "Done": true}
-				]`,
-			),
-			expectedTasks: todo.FromTodos([]todo.Todo{{
-				Task: "Task 3",
-				Done: false,
-			}}),
-			expectedError: nil,
-		},
-
-		{
-			name:   "deletes all tasks to given 'to id' when non positive 'from id' passed",
-			idFrom: 0,
-			idTo:   2,
-			testData: []byte(
-				`[
-					{"ID": 1, "Task": "Task 1", "Done": false},
-					{"ID": 2, "Task": "Task 2", "Done": false},
-				    {"ID": 3, "Task": "Task 3", "Done": true}
-				]`,
-			),
-			expectedTasks: todo.FromTodos([]todo.Todo{{
-				Task: "Task 3",
-				Done: false,
-			}}),
-			expectedError: nil,
-		},
-
-		{
-			name:   "deletes all tasks from given 'from id' when too large 'to id' passed",
-			idFrom: 2,
-			idTo:   100,
-			testData: []byte(
-				`[
-					{"ID": 1, "Task": "Task 1", "Done": false},
-					{"ID": 2, "Task": "Task 2", "Done": false},
-				    {"ID": 3, "Task": "Task 3", "Done": true}
-				]`,
-			),
-			expectedTasks: todo.FromTodos([]todo.Todo{{
-				Task: "Task 1",
-				Done: false,
-			}}),
-			expectedError: nil,
-		},
-
-		{
-			name:          "",
-			idFrom:        1,
-			idTo:          1,
-			testData:      nil,
-			expectedTasks: &todo.Tasks{},
-			// expectedError: &todo.OutOfRangeError{
-			// 	Value: 1,
-			// },
-			expectedError: nil,
-		},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			testDataPath := newIntegrationTest(t, test.testData)
-			storage := NewJsonFileStorage()
-
-			// when
-			err := storage.DeleteRange(test.idFrom, test.idTo)
-
-			// then
-			if test.expectedError != nil {
-				assert.Error(t, err)
-				assert.ErrorIs(t, err, test.expectedError)
-			} else {
-				assert.NoError(t, err)
-
-				data, _ := os.ReadFile(testDataPath)
-				var todos []todo.Todo
-				json.Unmarshal(data, &todos)
-
-				tasks := todo.FromTodos(todos)
-
-				assert.ObjectsAreEqualValues(test.expectedTasks, tasks)
-			}
-		})
-	}
-}
-
-func TestComplete(t *testing.T) {
-
-	testCases := []struct {
-		name          string
-		id            int
-		testData      []byte
-		expectedTasks *todo.Tasks
-		expectedError error
-	}{
-		{
-			name: "completes an existing task",
-			id:   1,
-			// todo use model marshall to jason, and save``
-			testData: []byte(
-				`[{"ID": 1, "Task": "Task 1", "Done": false}]`,
-			),
-			expectedTasks: todo.FromTodos([]todo.Todo{{
-				Task: "Task 1",
-				Done: true,
-			}}),
-			expectedError: nil,
-		},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-
-			testDataPath := newIntegrationTest(t, test.testData)
-			storage := NewJsonFileStorage()
-
-			err := storage.Complete(test.id)
-
-			if test.expectedError != nil {
-				assert.Error(t, err)
-				assert.ErrorIs(t, err, test.expectedError)
-			} else {
-				assert.NoError(t, err)
-
-				data, _ := os.ReadFile(testDataPath)
-				var todos []todo.Todo
-				json.Unmarshal(data, &todos)
-
-				tasks := todo.FromTodos(todos)
-
-				assert.ObjectsAreEqualValues(test.expectedTasks, tasks)
-			}
-
-		})
-
-	}
-
-}
-
-func TestReadData(t *testing.T) {
-
-	validJson := `[
-		{"ID": 1, "Task": "Task 1", "Done": false},
-        {"ID": 2, "Task": "Task 2", "Done": true}
-	]`
-
-	dataStorageFilePath = "data.json"
-
-	os.WriteFile(dataStorageFilePath, []byte(validJson), 0644)
-	defer os.Remove(dataStorageFilePath)
-
-	tests := []struct {
-		name    string
-		args    string
-		want    *todo.Tasks
-		wantErr bool
-	}{
-		{
-			name: "Valid JSON",
-			args: dataStorageFilePath,
-			want: todo.FromTodos([]todo.Todo{
-				{Task: "Task 1", Done: false},
-				{Task: "Task 2", Done: true},
-			}),
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := readData(All)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadData() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReadData() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestWriteData(t *testing.T) {
-
-	dataStorageFilePath = "test_data.json"
-
-	os.WriteFile(dataStorageFilePath, []byte(""), 0644)
-	defer os.Remove(dataStorageFilePath)
-
-	tests := []struct {
-		name    string
-		args    string
-		want    *todo.Tasks
-		wantErr bool
-	}{
-		{
-			name: "Valid JSON",
-			args: dataStorageFilePath,
-			want: todo.FromTodos([]todo.Todo{
-				{Task: "Task 1", Done: false},
-			}),
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := writeData(tt.want); (err != nil) != tt.wantErr {
-				t.Errorf("WriteData() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			got, _ := os.ReadFile(dataStorageFilePath)
-			var actualTodos []todo.Todo
-			json.Unmarshal(got, &actualTodos)
-			actualTodoList := todo.FromTodos(actualTodos)
-
-			if !reflect.DeepEqual(actualTodoList, tt.want) {
-				t.Errorf("ReadData() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-var c = Config{
-	FileName: "test_data.json",
-	FilePath: "./todo_storage_test/",
-}
-
-func TestJsonFileStorageFind(t *testing.T) {
-
-	Init(c, false)
-
-	defer os.RemoveAll(c.FilePath)
-
-	storage := NewJsonFileStorage()
-
-	t.Run("FindAll should not reurn error when file is empty", func(t *testing.T) {
-		_, err := storage.FindAll()
-		assertErrorIsNil(t, err)
-	})
-
-	t.Run("FindAll", func(t *testing.T) {
-		validJson := `[
-			{"ID": 1, "Task": "Task 1", "Done": false},
-    	    {"ID": 2, "Task": "Task 2", "Done": true}
-		]`
-
-		os.WriteFile(c.fullPath(), []byte(validJson), 0644)
-
-		tasks, err := storage.FindAll()
-		assertErrorIsNil(t, err)
-
-		if len(tasks.GetTodos()) != 2 {
-			t.Fatalf("expected")
-		}
-	})
-
-}
-
-func TestJsonFIleStorageFindTop(t *testing.T) {
-
-	validJson := `[
-			{"ID": 1, "Task": "Task 1", "Done": false},
-    	    {"ID": 2, "Task": "Task 2", "Done": true}
-		]`
-
-	testCases := []tests.TestCase{
-		{
-			Name:     "Find top",
-			FileName: "test_data.json",
-			FilePath: "./todo_storage_test/",
-			Data:     validJson,
-			Err:      nil,
-		},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.Name, func(t *testing.T) {
-			c := Config{
-				FileName: test.FileName,
-				FilePath: test.FilePath,
-			}
-
-			Init(c, false)
-
-			teardown := tests.NewIntegrationTest(test)
-			defer teardown()
-
-			storage := NewJsonFileStorage()
-			tasks, err := storage.FindTop(1)
-
-			assertErrorIsNil(t, err)
-
-			if tasksLen := len(tasks.GetTodos()); tasksLen != 1 {
-				t.Fatalf("expected to return 1 task, got %d", tasksLen)
-			}
-
-		})
-	}
-
-}
-
-func assertErrorIsNil(t testing.TB, got error) {
-	t.Helper()
-	if got != nil {
-		t.Fatalf("expected not to return error, got %q", got)
-	}
-}

@@ -130,7 +130,7 @@ func (j *JsonFileStorage) Update(taskId int, task string) error {
 	return persistChanges(func(t model.Tasks) (*model.Tasks, error) {
 		err := t.UpdateTask(taskId, task)
 		if err != nil {
-			return nil, fmt.Errorf("unable to update the task, %v", err)
+			return nil, fmt.Errorf("unable to update the task, %w", err)
 		}
 		return &t, nil
 	})
