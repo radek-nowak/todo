@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/radek-nowak/go_todo_app/ui"
+	"github.com/radek-nowak/todo/ui"
 	"github.com/spf13/cobra"
 )
 

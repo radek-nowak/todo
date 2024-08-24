@@ -7,8 +7,8 @@ import (
 	"path"
 	"testing"
 
-	model "github.com/radek-nowak/go_todo_app/todo/model"
-	"github.com/radek-nowak/go_todo_app/todo/storage"
+	model "github.com/radek-nowak/todo/todo/model"
+	"github.com/radek-nowak/todo/todo/storage"
 	"github.com/stretchr/testify/assert"
 )
 

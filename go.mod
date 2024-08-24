@@ -1,4 +1,4 @@
-module github.com/radek-nowak/go_todo_app
+module github.com/radek-nowak/todo
 
 go 1.21.3
 

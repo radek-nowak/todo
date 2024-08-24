@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/radek-nowak/go_todo_app/cmd"
-	"github.com/radek-nowak/go_todo_app/todo/storage"
+	"github.com/radek-nowak/todo/cmd"
+	"github.com/radek-nowak/todo/todo/storage"
 )
 
 var defaultDataStorageLocation = "/.todo_app/data/todo_data.json"
