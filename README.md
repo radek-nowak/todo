@@ -25,7 +25,6 @@ By default, the tasks are stored in a file located at `~/.todo_app/data/todo_dat
 If this directory or file does not exist, the application automatically creates them during the first run.
 
 ### Commands
-Commands
 - `todo add [task]` - Add a new task.
 - `todo show` - List all tasks.
 - `todo update [id] [new task]` - Update an existing task.
