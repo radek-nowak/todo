@@ -26,7 +26,8 @@ If this directory or file does not exist, the application automatically creates 
 
 ### Commands
 - `todo add [task]` - Add a new task.
-- `todo show` - List all tasks.
+- `todo show` - Show tasks (by dafault shows top 30 tasks).
+- `todo show --top [number of tasks]` - Show specified number of tasks to display.
 - `todo update [id] [new task]` - Update an existing task.
 - `todo complete [id]` - Mark a task as completed.
 - `todo delete [id]` - Delete a task by ID. You can either specify the ID directly or be prompted to enter it.
