@@ -8,7 +8,7 @@ import (
 	"path"
 	"path/filepath"
 
-	model "github.com/radek-nowak/todo/todo/model"
+	"github.com/radek-nowak/todo/tasks/model"
 )
 
 const (

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/radek-nowak/todo/todo/storage"
+	"github.com/radek-nowak/todo/tasks/storage"
 	"github.com/spf13/cobra"
 )
 

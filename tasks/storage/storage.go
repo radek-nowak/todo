@@ -1,6 +1,6 @@
 package storage
 
-import model "github.com/radek-nowak/todo/todo/model"
+import model "github.com/radek-nowak/todo/tasks/model"
 
 type Storage interface {
 	FindAll() (*model.Tasks, error)
